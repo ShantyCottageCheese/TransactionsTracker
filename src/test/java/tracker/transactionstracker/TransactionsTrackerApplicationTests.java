@@ -8,6 +8,7 @@ class TransactionsTrackerApplicationTests {
 
     @Test
     void contextLoads() {
+
     }
 
 }
