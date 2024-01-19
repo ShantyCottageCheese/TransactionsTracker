@@ -38,10 +38,10 @@ public class BlockchainExtractor {
                          Function.identity(),
                          this::fetchDataForBlockchain));
      }*/
-    public Map<Blockchain, Optional<List<TransactionResponse>>> extractBlockchainData() {
-        Map<Blockchain, Future<Optional<List<TransactionResponse>>>> futures;
-        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    public Map<Blockchain, List<TransactionResponse>> extractBlockchainData() {
+        Map<Blockchain, Future<List<TransactionResponse>>> futures;
 
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             futures = Arrays.stream(Blockchain.values())
                     .collect(Collectors.toMap(
                             Function.identity(),
@@ -57,15 +57,14 @@ public class BlockchainExtractor {
                                 return entry.getValue().get();
                             } catch (InterruptedException | ExecutionException e) {
                                 log.error("Error fetching data for blockchain: {}", entry.getKey(), e);
-                                return Optional.empty();
+                                return Collections.emptyList();
                             }
                         }
                 ));
     }
 
-    private Optional<List<TransactionResponse>> fetchDataForBlockchain(Blockchain type) {
-        return Optional.ofNullable(handlers.get(type))
-                .map(handler -> handler.extractData(type.getUrl(), type.getName()));
+    private List<TransactionResponse> fetchDataForBlockchain(Blockchain type) {
+        return handlers.get(type).extractData(type.getUrl(),type.getName());
     }
 
     private Optional<String> convertHandlerNameToEnum(String handlerName) {

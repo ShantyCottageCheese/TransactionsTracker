@@ -41,8 +41,8 @@ public class NearDataHandler implements BlockchainDataHandler {
         Optional<NearResponse> nearResponse = getDataFromBlockchain(url);
         nearResponse.ifPresentOrElse(response -> response.getData().forEach(data -> {
             TransactionResponse transactionResponse = TransactionResponse.builder()
-                    .id(Utils.getChain(Utils.getChain(chain) + Utils.convertUnixSecondToDate(Utils.convertDateToUnixFromYMD(data.getDate().substring(0, 10)))))
-                    .date(Utils.convertDateToUnixFromYMD(data.getDate().substring(0,10)))
+                    .id(Utils.getChain(chain) + Utils.convertUnixSecondToDate(Utils.convertDateToUnixFromYMD(data.getDate().substring(0, 10))))
+                    .date(Utils.convertDateToUnixFromYMD(data.getDate().substring(0, 10)))
                     .chain(chain)
                     .twentyFourHourChange(data.getTxns())
                     .build();
