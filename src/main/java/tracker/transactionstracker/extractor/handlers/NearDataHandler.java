@@ -1,35 +1,32 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import tracker.transactionstracker.processors.utils.Utils;
-import tracker.transactionstracker.response.AvalancheResponse;
-import tracker.transactionstracker.response.TransactionResponse;
+import tracker.transactionstracker.extractor.response.NearResponse;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
+import tracker.transactionstracker.extractor.handlers.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static tracker.transactionstracker.processors.utils.Utils.*;
-
 @Service
 @Lazy
 @Slf4j
-public class AvalancheDataHandler implements BlockchainDataHandler {
+public class NearDataHandler implements BlockchainDataHandler {
     private final RestTemplate restTemplate;
 
-
-    public AvalancheDataHandler(RestTemplate restTemplate) {
+    public NearDataHandler(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     @Override
-    public Optional<AvalancheResponse> getDataFromBlockchain(String url) {
+    public Optional<NearResponse> getDataFromBlockchain(String url) {
         try {
-            AvalancheResponse response = restTemplate.getForObject(url, AvalancheResponse.class);
+            NearResponse response = restTemplate.getForObject(url, NearResponse.class);
             return Optional.ofNullable(response);
         } catch (RestClientException e) {
             log.error("Near - resource access error: {}", e.getMessage());
@@ -40,16 +37,18 @@ public class AvalancheDataHandler implements BlockchainDataHandler {
     @Override
     public List<TransactionResponse> extractData(String url, String chain) {
         List<TransactionResponse> transactionsList = new ArrayList<>();
-        Optional<AvalancheResponse> avalancheResponse = getDataFromBlockchain(url);
-        avalancheResponse.ifPresentOrElse(response -> response.getResponse().stream().skip(1).forEach(data -> {
+
+        Optional<NearResponse> nearResponse = getDataFromBlockchain(url);
+        nearResponse.ifPresentOrElse(response -> response.getData().forEach(data -> {
             TransactionResponse transactionResponse = TransactionResponse.builder()
-                    .id(getChain(chain) + convertUnixSecondToDate(data.getTimestamp()))
-                    .date(data.getTimestamp())
+                    .id(Utils.getChain(Utils.getChain(chain) + Utils.convertUnixSecondToDate(Utils.convertDateToUnixFromYMD(data.getDate().substring(0, 10)))))
+                    .date(Utils.convertDateToUnixFromYMD(data.getDate().substring(0,10)))
                     .chain(chain)
-                    .twentyFourHourChange(data.getValue())
+                    .twentyFourHourChange(data.getTxns())
                     .build();
             transactionsList.add(transactionResponse);
-        }), () -> log.info(Utils.noDataFound + chain));
+        }), () -> log.info(Utils.NO_DATA_FOUND + chain));
         return transactionsList;
+
     }
 }

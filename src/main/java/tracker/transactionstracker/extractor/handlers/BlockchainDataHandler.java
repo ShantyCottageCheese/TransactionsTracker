@@ -1,6 +1,6 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
-import tracker.transactionstracker.response.TransactionResponse;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.List;
 import java.util.Optional;

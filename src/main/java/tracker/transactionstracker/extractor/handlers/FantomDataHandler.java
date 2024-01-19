@@ -1,17 +1,17 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import tracker.transactionstracker.response.TransactionResponse;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.List;
 import java.util.Optional;
 @Service
 @Lazy
-public class BscDataHandler implements BlockchainDataHandler {
+public class FantomDataHandler implements BlockchainDataHandler {
     private final CommonBlockchainHandler commonBlockchainHandler;
 
-    public BscDataHandler(CommonBlockchainHandler commonBlockchainHandler) {
+    public FantomDataHandler(CommonBlockchainHandler commonBlockchainHandler) {
         this.commonBlockchainHandler = commonBlockchainHandler;
     }
 

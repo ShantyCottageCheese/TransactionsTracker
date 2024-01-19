@@ -1,4 +1,4 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
@@ -7,13 +7,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import tracker.transactionstracker.response.TransactionResponse;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static tracker.transactionstracker.processors.utils.Utils.*;
+import static tracker.transactionstracker.extractor.handlers.utils.Utils.*;
 
 @Slf4j
 @Service
@@ -56,7 +56,7 @@ public class CardanoDataHandler implements BlockchainDataHandler {
                     .allTransactions(response)
                     .build();
             transactionsList.add(transactionResponse);
-        }, () -> log.info(noDataFound + chain));
+        }, () -> log.info(NO_DATA_FOUND + chain));
         return transactionsList;
     }
 }

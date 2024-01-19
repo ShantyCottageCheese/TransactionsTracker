@@ -1,4 +1,4 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -8,9 +8,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import tracker.transactionstracker.response.AptosResponse;
-import tracker.transactionstracker.response.TransactionResponse;
-import tracker.transactionstracker.processors.utils.Utils;
+import tracker.transactionstracker.extractor.handlers.utils.Utils;
+import tracker.transactionstracker.extractor.response.AptosResponse;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +65,7 @@ public class AptosDataHandler implements BlockchainDataHandler {
                     .twentyFourHourChange(transaction.getDayCount())
                     .build();
             transactionsList.add(transactionResponse);
-        }), () -> log.info(Utils.noDataFound + chain));
+        }), () -> log.info(Utils.NO_DATA_FOUND + chain));
         return transactionsList;
     }
 }

@@ -1,4 +1,4 @@
-package tracker.transactionstracker.response;
+package tracker.transactionstracker.extractor.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

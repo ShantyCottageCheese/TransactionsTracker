@@ -1,12 +1,12 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import tracker.transactionstracker.response.TransactionResponse;
-import tracker.transactionstracker.processors.utils.Utils;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
+import tracker.transactionstracker.extractor.handlers.utils.Utils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -27,6 +27,7 @@ public class HarmonyDataHandler implements BlockchainDataHandler {
             String filePath = Utils.FILE_PATH + Utils.fileName;
             try {
                 String csvString = Files.readString(Paths.get(filePath));
+                Utils.fileName = "unknown";
                 return Optional.ofNullable(new CSVReaderBuilder(new StringReader(csvString))
                         .withSkipLines(1)
                         .build());

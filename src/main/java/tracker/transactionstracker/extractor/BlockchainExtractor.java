@@ -3,10 +3,11 @@ package tracker.transactionstracker.extractor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import tracker.transactionstracker.processors.BlockchainDataHandler;
-import tracker.transactionstracker.response.TransactionResponse;
+import tracker.transactionstracker.extractor.handlers.BlockchainDataHandler;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,11 +32,35 @@ public class BlockchainExtractor {
         }
     }
 
+    /*public Map<Blockchain, Optional<List<TransactionResponse>>> extractBlockchainData() {
+         return Arrays.stream(Blockchain.values())
+                 .collect(Collectors.toMap(
+                         Function.identity(),
+                         this::fetchDataForBlockchain));
+     }*/
     public Map<Blockchain, Optional<List<TransactionResponse>>> extractBlockchainData() {
-        return Arrays.stream(Blockchain.values())
+        Map<Blockchain, Future<Optional<List<TransactionResponse>>>> futures;
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+
+            futures = Arrays.stream(Blockchain.values())
+                    .collect(Collectors.toMap(
+                            Function.identity(),
+                            blockchain -> CompletableFuture.supplyAsync(() -> fetchDataForBlockchain(blockchain), executor)
+                    ));
+        }
+
+        return futures.entrySet().stream()
                 .collect(Collectors.toMap(
-                        Function.identity(),
-                        this::fetchDataForBlockchain));
+                        Map.Entry::getKey,
+                        entry -> {
+                            try {
+                                return entry.getValue().get();
+                            } catch (InterruptedException | ExecutionException e) {
+                                log.error("Error fetching data for blockchain: {}", entry.getKey(), e);
+                                return Optional.empty();
+                            }
+                        }
+                ));
     }
 
     private Optional<List<TransactionResponse>> fetchDataForBlockchain(Blockchain type) {
@@ -45,8 +70,7 @@ public class BlockchainExtractor {
 
     private Optional<String> convertHandlerNameToEnum(String handlerName) {
         if (handlerName != null && handlerName.endsWith("DataHandler")) {
-            String enumName = handlerName.substring(0, handlerName.length() - "DataHandler".length());
-            return Optional.of(enumName.toUpperCase());
+            return Optional.of(handlerName.substring(0, handlerName.length() - "DataHandler".length()).toUpperCase());
         } else {
             return Optional.empty();
         }

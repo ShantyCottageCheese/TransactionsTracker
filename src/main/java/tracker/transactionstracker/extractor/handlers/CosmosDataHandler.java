@@ -1,4 +1,4 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import tracker.transactionstracker.response.TransactionResponse;
-import tracker.transactionstracker.processors.utils.Utils;
+import tracker.transactionstracker.extractor.handlers.utils.Utils;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,15 +47,6 @@ public class CosmosDataHandler implements BlockchainDataHandler {
         Optional<Long> cosmosResponse = getDataFromBlockchain(url);
         List<TransactionResponse> transactionsList = new ArrayList<>();
 
-        cosmosResponse.ifPresentOrElse(response -> {
-            TransactionResponse responseTransaction = TransactionResponse.builder()
-                    .id(Utils.getChain(chain)+ Utils.getPreviousDate())
-                    .date(Utils.convertDateToUnixFromMDY(Utils.getPreviousDate()))
-                    .chain(chain)
-                    .twentyFourHourChange(response)
-                    .build();
-            transactionsList.add(responseTransaction);
-        }, () -> log.info(Utils.noDataFound + chain));
-        return transactionsList;
+        return Utils.createCommonTransactionResponse(chain, transactionsList, cosmosResponse, log);
     }
 }

@@ -1,4 +1,4 @@
-package tracker.transactionstracker.processors;
+package tracker.transactionstracker.extractor.handlers;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
@@ -6,12 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import tracker.transactionstracker.response.TransactionResponse;
-import tracker.transactionstracker.processors.utils.Utils;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
+import tracker.transactionstracker.extractor.handlers.utils.Utils;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 

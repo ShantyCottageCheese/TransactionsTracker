@@ -1,23 +1,40 @@
-package tracker.transactionstracker.processors.utils;
+package tracker.transactionstracker.extractor.handlers.utils;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import tracker.transactionstracker.extractor.response.TransactionResponse;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class Utils {
     private static final ZoneId ZONE_ID = ZoneId.of("UTC");
-    public static final String noDataFound = "No data found: ";
-    public static final String FILE_PATH = "./download/";
-    public static String fileName = "";
+    public static final String NO_DATA_FOUND = "No data found: ";
+    public static final String FILE_PATH = "./src/main/java/tracker/transactionstracker/extractor/temp/";
+    public static String fileName = "unknown";
 
-
+    public static List<TransactionResponse> createCommonTransactionResponse(String chain, List<TransactionResponse> transactionsList, Optional<Long> solanaResponse, Logger log) {
+        solanaResponse.ifPresentOrElse(response -> {
+            TransactionResponse responseTransaction = TransactionResponse.builder()
+                    .id(Utils.getChain(chain) + Utils.getPreviousDate())
+                    .date(Utils.convertDateToUnixFromMDY(Utils.getPreviousDate()))
+                    .chain(chain)
+                    .twentyFourHourChange(response)
+                    .build();
+            transactionsList.add(responseTransaction);
+        }, () -> log.info(Utils.NO_DATA_FOUND + chain));
+        return transactionsList;
+    }
     public static String getId(String[] line, String chain) {
         DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("M/d/yyyy");
         DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern("M-dd-yyyy");
@@ -60,47 +77,40 @@ public class Utils {
     public static boolean downloadCSVFromWebsite(String url) {
         AtomicBoolean result = new AtomicBoolean(false);
         try (Playwright playwright = Playwright.create()) {
+            Page page;
             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+                page = browser.newPage();
 
-            Page page = browser.newPage();
             page.navigate(url);
 
-            // Wait for the page to load
             page.waitForLoadState(LoadState.NETWORKIDLE);
             page.waitForSelector("//span[contains(text(), 'CSV Data')]");
 
-
-            saveFileFromPath(page, FILE_PATH, "").thenAccept(fileSaveResult -> {
-                result.set(fileSaveResult.success());
-                fileName = fileSaveResult.fileName();
-
-            });
+            CompletableFuture<FileSaveResult> fileSaveFuture = saveFileFromPath(page, FILE_PATH, "");
 
             ElementHandle downloadButton = page.querySelector("//span[contains(text(), 'CSV Data')]");
             if (downloadButton != null) {
                 downloadButton.click();
+                FileSaveResult fileSaveResult = fileSaveFuture.get(); // Czekaj na zakończenie pobierania
+                result.set(fileSaveResult.success());
+                fileName = fileSaveResult.fileName();
             } else {
                 log.info("Download button not found");
             }
-
-            if (!sleepThread(3000))
-                log.info("Download interrupted");
-
-
-            return result.get();
         } catch (Exception e) {
             log.info("Error downloading file", e);
             return false;
         }
+        return result.get();
     }
 
     public static CompletableFuture<FileSaveResult> saveFileFromPath(Page page, String path, String filename) {
         CompletableFuture<FileSaveResult> future = new CompletableFuture<>();
-
         page.onDownload(download -> {
             try {
-                String finalFileName = (filename == null || filename.isEmpty()) ? download.suggestedFilename() : filename;
-                download.saveAs(Paths.get(path + finalFileName));
+                String finalFileName = filename.isEmpty() ? download.suggestedFilename() : filename;
+                Path filePath = Paths.get(path, finalFileName);
+                download.saveAs(filePath);
                 future.complete(new FileSaveResult(true, finalFileName));
             } catch (Exception e) {
                 log.info("Error saving file", e);
@@ -108,6 +118,11 @@ public class Utils {
             }
         });
         return future;
+    }
+
+    public static void fileWithDirectoryAssurance(String directory) {
+        File dir = new File(directory);
+        if (!dir.exists()) dir.mkdirs();
     }
 
     private static boolean sleepThread(int millis) {
