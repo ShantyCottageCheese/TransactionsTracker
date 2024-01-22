@@ -11,6 +11,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import tracker.transactionstracker.extractor.handlers.utils.Utils;
 import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class SolanaDataHandler implements BlockchainDataHandler {
         try {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             String result = response.getBody();
+            assert result != null;
             JSONObject jsonObject = new JSONObject(result);
             transactionCount = Optional.of(jsonObject.getLong("transactionCount"));
         } catch (Exception e) {
@@ -58,7 +60,16 @@ public class SolanaDataHandler implements BlockchainDataHandler {
     public List<TransactionResponse> extractData(String url, String chain) {
         List<TransactionResponse> transactionsList = new ArrayList<>();
         Optional<Long> solanaResponse = getDataFromBlockchain(url);
-        return createCommonTransactionResponse(chain, transactionsList, solanaResponse, log);
+        solanaResponse.ifPresentOrElse(response -> {
+            TransactionResponse responseTransaction = TransactionResponse.builder()
+                    .id(Utils.getChain(chain) + Utils.getPreviousDate())
+                    .date(Utils.convertDateToUnixFromMDY(Utils.getPreviousDate()))
+                    .chain(chain)
+                    .allTransactions(response)
+                    .build();
+            transactionsList.add(responseTransaction);
+        }, () -> log.info(Utils.NO_DATA_FOUND + chain));
+        return transactionsList;
     }
 
 

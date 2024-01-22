@@ -14,4 +14,6 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity,S
 
     @Query("SELECT t FROM TRANSACTIONS_TRACKER t WHERE t.twentyFourHourChange IS NULL")
     List<TransactionEntity> findAllWithNullChange();
+
+    List<TransactionEntity> findAllByDateBetween(long localDateTime, long localDateTime1);
 }
