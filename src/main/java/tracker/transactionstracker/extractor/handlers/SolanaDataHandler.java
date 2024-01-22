@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static tracker.transactionstracker.extractor.handlers.utils.Utils.createCommonTransactionResponse;
 
 @Slf4j
 @Service
