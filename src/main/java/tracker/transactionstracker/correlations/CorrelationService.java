@@ -26,16 +26,16 @@ public class CorrelationService {
         this.binanceService = binanceService;
     }
 
-    public Map<String, Map<String, Double>> test() {
-        Map<String, List<TransactionEntity>> transactions = databaseService.getTransactionsFromLastDays(14);
-        Map<String, Map<String, BigDecimal>> marketDataMap = binanceService.getMarketData(15);
+    public Map<String, Map<String, BigDecimal>> getCorrelationMap() {
+        Map<String, List<TransactionEntity>> transactions = databaseService.getTransactionsFromLastDays(56);
+        Map<String, Map<String, BigDecimal>> marketDataMap = binanceService.getMarketData(57);
         Map<String, Map<String, TransactionDto>> transactionDtoMap = mapEntityToDto(transactions, marketDataMap);
         return calculateCorrelationForPeriods(transactionDtoMap);
 
     }
 
-    public Map<String, Map<String, Double>> calculateCorrelationForPeriods(Map<String, Map<String, TransactionDto>> transactionDtoMap) {
-        Map<String, Map<String, Double>> correlationResults = new HashMap<>();
+    public Map<String, Map<String, BigDecimal>> calculateCorrelationForPeriods(Map<String, Map<String, TransactionDto>> transactionDtoMap) {
+        Map<String, Map<String, BigDecimal>> correlationResults = new HashMap<>();
 
         for (String blockchain : transactionDtoMap.keySet()) {
             // Lista zawiera posortowane daty
@@ -46,7 +46,6 @@ public class CorrelationService {
 
             int periodSize = 7; // Rozmiar okresu do przetwarzania danych
             for (int i = 0; i <= sortedDates.size() - periodSize; i += periodSize) {
-                // Zweryfikuj czy długość okresu jest wielokrotnością liczby 7
                 if ((sortedDates.size() - i) >= periodSize) {
                     List<Double> transactionAmounts = new ArrayList<>();
                     List<Double> prices = new ArrayList<>();
@@ -66,7 +65,7 @@ public class CorrelationService {
                     }
 
                     if (!transactionAmounts.isEmpty() && transactionAmounts.size() == prices.size()) {
-                        double correlation = correlationCoefficient(transactionAmounts, prices);
+                        BigDecimal correlation = correlationCoefficient(transactionAmounts, prices);
                         String range = startDate + " - " + endDate;
                         correlationResults.computeIfAbsent(blockchain, k -> new HashMap<>()).put(range, correlation);
                     } else {

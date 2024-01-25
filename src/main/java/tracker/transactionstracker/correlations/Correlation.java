@@ -1,9 +1,14 @@
 package tracker.transactionstracker.correlations;
 
+import lombok.extern.slf4j.Slf4j;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+@Slf4j
 public class Correlation {
 //    static double correlationCoefficient(double[] coin1Array, double[] coin2Array) {
 //        List<Double> coin1 = new LinkedList<>();
@@ -22,14 +27,16 @@ public class Correlation {
 //
 //    }
 
-    static double correlationCoefficient(List<Double> coin1, List<Double> coin2) {
-
+    static BigDecimal correlationCoefficient(List<Double> coin1, List<Double> coin2) {
         double covarianceXY, stdDivX, stdDivY;
         covarianceXY = covariance(coin1, coin2);
         stdDivX = computeStdDeviation(coin1);
         stdDivY = computeStdDeviation(coin2);
+        if (stdDivX == 0 || stdDivY == 0)
+            return null;
 
-        return covarianceXY / (stdDivX * stdDivY);
+        BigDecimal correlation = new BigDecimal(covarianceXY / (stdDivX * stdDivY));
+        return correlation.setScale(2, RoundingMode.HALF_UP);
 
     }
 

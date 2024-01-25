@@ -58,7 +58,7 @@ public class BlockchainController {
         long elapsedTime = end - start;
         System.out.println("Czas wykonania: " + elapsedTime + " milisekund");
 
-        return ResponseEntity.ok(correlationService.test().toString());
+        return ResponseEntity.ok(correlationService.getCorrelationMap().toString());
     }
 
 }

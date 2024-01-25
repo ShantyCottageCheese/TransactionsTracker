@@ -72,6 +72,11 @@
             <artifactId>binance-connector-java</artifactId>
             <version>3.2.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.icepear.echarts</groupId>
+            <artifactId>echarts-java</artifactId>
+            <version>1.0.7</version>
+        </dependency>
 
     </dependencies>
     <packaging>jar</packaging>
