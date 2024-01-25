@@ -26,7 +26,7 @@ public class DatabaseService {
     private final BlockchainExtractor blockchainExtractor;
     private final TransactionRepository transactionRepository;
     private static final ZoneId ZONE_ID = ZoneId.of("UTC");
-   private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M-dd-yyyy");
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M-dd-yyyy");
 
 
     public DatabaseService(BlockchainExtractor blockchainExtractor, TransactionRepository transactionRepository) {
@@ -41,11 +41,10 @@ public class DatabaseService {
 
     private void saveTransactionsToDatabase(Map<Blockchain, List<TransactionResponse>> transactionResponseMap) {
 
-        Set<String> nullTransactionsId = findNullTransactionIds();
+        Set<TransactionEntity> nullTransactionsId = findNullTransactionIds();
 
-        List<String> filteredTransactionsToUpdate = filterTransactionsToUpdate(transactionResponseMap, nullTransactionsId);
+        List<TransactionEntity> filteredTransactionsToUpdate = filterAndUpdateTransactions(transactionResponseMap, nullTransactionsId);
 
-        List<TransactionEntity> transactionsToUpdate = updateTransactions(filteredTransactionsToUpdate, nullTransactionsId);
 
         List<String> idsToSave = transactionResponseMap.values().stream()
                 .flatMap(List::stream)
@@ -59,12 +58,11 @@ public class DatabaseService {
                 .flatMap(List::stream)
                 .filter(transaction -> !existingEntities.contains(transaction.getId()))
                 .toList();
+
         List<TransactionEntity> transactionsEntitiesToSave = createTransactionEntities(newTransactions);
-
-        addBlockchainTransactionsWithoutData(transactionResponseMap, transactionsEntitiesToSave, nullTransactionsId, filteredTransactionsToUpdate);
-
-        transactionsEntitiesToSave.addAll(transactionsToUpdate);
-        transactionsEntitiesToSave.addAll(checkAndAddMissingRecords());
+        transactionsEntitiesToSave.addAll(filteredTransactionsToUpdate);
+        checkAndAddMissingRecords(transactionsEntitiesToSave);
+        addBlockchainTransactionsWithoutData(transactionResponseMap, transactionsEntitiesToSave);
 
         log.info("Saving {} transactions to database", transactionsEntitiesToSave.size());
         if (!transactionsEntitiesToSave.isEmpty()) {
@@ -72,30 +70,33 @@ public class DatabaseService {
         }
     }
 
-    private Set<String> findNullTransactionIds() {
-        return transactionRepository.findAllWithNullChange()
-                .stream()
-                .map(TransactionEntity::getId)
-                .collect(Collectors.toSet());
+    private Set<TransactionEntity> findNullTransactionIds() {
+        return new HashSet<>(transactionRepository.findAllWithNullChange());
     }
 
-    private List<String> filterTransactionsToUpdate(Map<Blockchain, List<TransactionResponse>> transactionResponseMap, Set<String> nullTransactionsId) {
-        return transactionResponseMap.values().stream()
-                .flatMap(List::stream)
-                .map(TransactionResponse::getId)
-                .filter(nullTransactionsId::contains)
-                .toList();
-    }
+    private List<TransactionEntity> filterAndUpdateTransactions(Map<Blockchain, List<TransactionResponse>> transactionResponseMap, Set<TransactionEntity> nullTransactionsId) {
+        Set<TransactionResponse> responsesToRemove = new HashSet<>();
+        Set<TransactionEntity> entitiesToUpdate = new HashSet<>();
 
-    private List<TransactionEntity> updateTransactions(List<String> filteredTransactionsToUpdate, Set<String> nullTransactionsId) {
-        List<TransactionEntity> transactionsToUpdate = transactionRepository.findAllById(filteredTransactionsToUpdate);
-        for (TransactionEntity transaction : transactionsToUpdate) {
-            transaction.setTwentyFourHourChange(transaction.getTwentyFourHourChange());
-            transaction.setAllTransactions(transaction.getAllTransactions());
-            nullTransactionsId.remove(transaction.getId());
+        for (List<TransactionResponse> transactions : transactionResponseMap.values()) {
+            for (TransactionResponse transactionResponse : transactions) {
+                for (TransactionEntity transactionEntity : nullTransactionsId) {
+                    if (transactionEntity.getId().equals(transactionResponse.getId())) {
+                        transactionEntity.setTwentyFourHourChange(transactionResponse.getChain().equals("Solana") || transactionResponse.getChain().equals("Cardano") ? twentyFourHourChangeTransaction(transactionResponse, transactionRepository) : transactionResponse.getTwentyFourHourChange());
+                        transactionEntity.setAllTransactions(transactionResponse.getAllTransactions());
+                        entitiesToUpdate.add(transactionEntity);
+                        responsesToRemove.add(transactionResponse);
+                    }
+                }
+            }
+
+            transactions.removeAll(responsesToRemove);
         }
-        return transactionsToUpdate;
+        nullTransactionsId.removeAll(entitiesToUpdate);
+
+        return new ArrayList<>(entitiesToUpdate);
     }
+
 
     private List<TransactionEntity> createTransactionEntities(List<TransactionResponse> newTransactions) {
         return newTransactions.stream()
@@ -109,12 +110,15 @@ public class DatabaseService {
                 .collect(Collectors.toList());
     }
 
-    private void addBlockchainTransactionsWithoutData(Map<Blockchain, List<TransactionResponse>> transactionResponseMap, List<TransactionEntity> transactionsEntitiesToSave, Set<String> nullTransactionsId, List<String> existingEntities) {
+    private void addBlockchainTransactionsWithoutData(Map<Blockchain, List<TransactionResponse>> transactionResponseMap, List<TransactionEntity> transactionsEntitiesToSave) {
+        Set<String> idsToCheck = transactionsEntitiesToSave.stream()
+                .map(TransactionEntity::getId)
+                .collect(Collectors.toSet());
         transactionResponseMap.forEach((blockchain, transactionResponses) -> {
-            String previousDate = blockchain.getName() + "-" + getPreviousDate();
-            if (transactionResponses.isEmpty() && !nullTransactionsId.contains(previousDate) && !existingEntities.contains(previousDate)) {
+            String id = blockchain.getName() + "-" + getPreviousDate();
+            if (transactionResponses.isEmpty() && !idsToCheck.contains(id)) {
                 transactionsEntitiesToSave.add(TransactionEntity.builder()
-                        .id(previousDate)
+                        .id(id)
                         .chain(blockchain.getName())
                         .date(getPreviousTimestamp())
                         .twentyFourHourChange(null)
@@ -124,13 +128,16 @@ public class DatabaseService {
         });
     }
 
-    private List<TransactionEntity> checkAndAddMissingRecords() {
-        List<TransactionEntity> missingRecords = new ArrayList<>();
+    private void checkAndAddMissingRecords(List<TransactionEntity> transactionEntityList) {
         LocalDate endDate = LocalDate.now().minusDays(1);
         LocalDate startDate = endDate.minusDays(6);
 
         List<TransactionEntity> existingTransactions = transactionRepository
                 .findAllByDateBetween(startDate.atStartOfDay(ZONE_ID).toEpochSecond(), endDate.atStartOfDay(ZONE_ID).toEpochSecond());
+
+        Set<String> idsInTransactionsToSave = transactionEntityList.stream()
+                .map(TransactionEntity::getId)
+                .collect(Collectors.toSet());
 
         Map<String, Map<LocalDate, TransactionEntity>> transactionsGroupedByChainAndDate = existingTransactions.stream()
                 .collect(Collectors.groupingBy(TransactionEntity::getChain,
@@ -143,12 +150,14 @@ public class DatabaseService {
             for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 if (!transactionsByDate.containsKey(date)) {
                     TransactionEntity missingTransaction = createMissingTransactionEntity(chain, date);
-                    missingRecords.add(missingTransaction);
+                    if (!idsInTransactionsToSave.contains(missingTransaction.getId())) {
+                        transactionEntityList.add(missingTransaction);
+                    }
                 }
             }
         });
-        return missingRecords;
     }
+
 
     private TransactionEntity createMissingTransactionEntity(String chain, LocalDate date) {
         return TransactionEntity.builder()
@@ -159,5 +168,10 @@ public class DatabaseService {
                 .allTransactions(null)
                 .build();
     }
+    public Map<String, List<TransactionEntity>> getTransactionsFromLastDays(int days) {
 
+        long date = calculateFromDate(days);
+        List<TransactionEntity> transactions = transactionRepository.findAllTransactionsFromLastDays(date);
+        return transactions.stream().collect(Collectors.groupingBy(TransactionEntity::getChain));
+    }
 }

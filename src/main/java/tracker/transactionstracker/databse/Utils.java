@@ -16,13 +16,19 @@ public class Utils {
     private static final ZoneId ZONE_ID = ZoneId.of("UTC");
 
     static Long twentyFourHourChangeTransaction(TransactionResponse transactionResponse, TransactionRepository transactionRepository) {
-        Optional<TransactionEntity> previousTransactionEntity = transactionRepository.findFirstByChainOrderByDateDesc(transactionResponse.getChain());
+        Optional<TransactionEntity> previousTransactionEntity = transactionRepository.findFirstByChainAndDateBeforeOrderByDateDesc(
+                transactionResponse.getChain(),
+                transactionResponse.getDate()
+        );
+
         if (previousTransactionEntity.isPresent() && previousTransactionEntity.get().getAllTransactions() != null) {
             long result = transactionResponse.getAllTransactions() - previousTransactionEntity.get().getAllTransactions();
             return result >= 0 ? result : null;
-        } else return null;
-
+        } else {
+            return null;
+        }
     }
+
 
     static String getPreviousDate() {
         LocalDate localDate = LocalDate.now(ZONE_ID).minusDays(1);
@@ -41,5 +47,9 @@ public class Utils {
         return IntStream.iterate(0, i -> i < collection.size(), i -> i + DatabaseService.BATCH_SIZE)
                 .mapToObj(i -> collection.subList(i, Math.min(i + DatabaseService.BATCH_SIZE, collection.size())))
                 .toList();
+    }
+    static long calculateFromDate(int days) {
+        LocalDate date = LocalDate.now().minusDays(days + 1);
+        return date.atStartOfDay(ZoneId.of("UTC")).toEpochSecond();
     }
 }
