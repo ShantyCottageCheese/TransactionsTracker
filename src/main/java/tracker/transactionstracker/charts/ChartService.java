@@ -2,6 +2,7 @@ package tracker.transactionstracker.charts;
 
 import org.icepear.echarts.Heatmap;
 import org.icepear.echarts.charts.heatmap.HeatmapSeries;
+import org.icepear.echarts.components.coord.cartesian.CategoryAxis;
 import org.icepear.echarts.components.series.SeriesLabel;
 import org.icepear.echarts.render.Engine;
 import org.springframework.stereotype.Service;
@@ -43,13 +44,13 @@ public class ChartService {
             }
         }
         Heatmap heatmap = new Heatmap()
-                .addXAxis(dates.toArray(new String[0]))
-                .addYAxis(chains.toArray(new String[0]))
+                .addXAxis(new CategoryAxis().setName("Date").setData(  dates.toArray(new String[0])))
+                .addYAxis(new CategoryAxis().setName("Blockchain").setData(chains.toArray(new String[0])))
+                .setTitle("Heatmap Correlation")
                 .setVisualMap(-1, 1)
-                .addSeries(new HeatmapSeries().setName("Punch Card")
+                .addSeries(new HeatmapSeries()
                         .setData(dataValue.toArray())
                         .setLabel(new SeriesLabel().setShow(true)));
-
         Engine engine = new Engine();
         return engine.renderHtml(heatmap);
 
