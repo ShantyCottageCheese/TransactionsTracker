@@ -31,6 +31,7 @@ public class BlockchainExtractor {
                     .ifPresent(blockchain -> handlers.put(blockchain, handler));
         }
     }
+
     public Map<Blockchain, List<TransactionResponse>> extractBlockchainData() {
         Map<Blockchain, Future<List<TransactionResponse>>> futures;
 
@@ -57,7 +58,7 @@ public class BlockchainExtractor {
     }
 
     private List<TransactionResponse> fetchDataForBlockchain(Blockchain type) {
-        return handlers.get(type).extractData(type.getUrl(),type.getName());
+        return handlers.get(type).extractData(type.getUrl(), type.getName());
     }
 
     private Optional<String> convertHandlerNameToEnum(String handlerName) {
@@ -67,6 +68,4 @@ public class BlockchainExtractor {
             return Optional.empty();
         }
     }
-
-
 }

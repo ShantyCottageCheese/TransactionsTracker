@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 
 public class Utils {
     private static final ZoneId ZONE_ID = ZoneId.of("UTC");
+    private static final int BATCH_SIZE = 100;
 
     static Long twentyFourHourChangeTransaction(TransactionResponse transactionResponse, TransactionRepository transactionRepository) {
         Optional<TransactionEntity> previousTransactionEntity = transactionRepository.findFirstByChainAndDateBeforeOrderByDateDesc(
@@ -29,7 +30,6 @@ public class Utils {
         }
     }
 
-
     static String getPreviousDate() {
         LocalDate localDate = LocalDate.now(ZONE_ID).minusDays(1);
         LocalDateTime localDateTime = localDate.atStartOfDay();
@@ -44,10 +44,11 @@ public class Utils {
     }
 
     static <T> List<List<T>> getBatches(List<T> collection) {
-        return IntStream.iterate(0, i -> i < collection.size(), i -> i + DatabaseService.BATCH_SIZE)
-                .mapToObj(i -> collection.subList(i, Math.min(i + DatabaseService.BATCH_SIZE, collection.size())))
+        return IntStream.iterate(0, i -> i < collection.size(), i -> i + BATCH_SIZE)
+                .mapToObj(i -> collection.subList(i, Math.min(i + BATCH_SIZE, collection.size())))
                 .toList();
     }
+
     static long calculateFromDate(int days) {
         LocalDate date = LocalDate.now().minusDays(days + 1);
         return date.atStartOfDay(ZoneId.of("UTC")).toEpochSecond();

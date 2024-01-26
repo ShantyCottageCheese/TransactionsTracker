@@ -18,7 +18,6 @@ public class ChartService {
     private final CorrelationService correlationService;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yy");
 
-
     public ChartService(CorrelationService correlationService) {
         this.correlationService = correlationService;
     }
@@ -34,7 +33,6 @@ public class ChartService {
 
         List<Number[]> dataValue = new ArrayList<>();
 
-
         for (String chain : chains) {
             Map<String, BigDecimal> dateToCorrelationMap = correlationData.get(chain);
             for (String date : dates) {
@@ -44,7 +42,7 @@ public class ChartService {
             }
         }
         Heatmap heatmap = new Heatmap()
-                .addXAxis(new CategoryAxis().setName("Date").setData(  dates.toArray(new String[0])))
+                .addXAxis(new CategoryAxis().setName("Date").setData(dates.toArray(new String[0])))
                 .addYAxis(new CategoryAxis().setName("Blockchain").setData(chains.toArray(new String[0])))
                 .setTitle("Heatmap Correlation")
                 .setVisualMap(-1, 1)
@@ -53,6 +51,5 @@ public class ChartService {
                         .setLabel(new SeriesLabel().setShow(true)));
         Engine engine = new Engine();
         return engine.renderHtml(heatmap);
-
     }
 }

@@ -51,7 +51,6 @@ public class SolanaDataHandler implements BlockchainDataHandler {
         } catch (Exception e) {
             log.error("Error while fetching data from blockchain", e);
         }
-
         return transactionCount;
     }
 

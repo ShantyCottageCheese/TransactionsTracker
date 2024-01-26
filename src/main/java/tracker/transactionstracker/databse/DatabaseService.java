@@ -22,12 +22,10 @@ import static tracker.transactionstracker.databse.Utils.*;
 @Slf4j
 @Service
 public class DatabaseService {
-    public static final int BATCH_SIZE = 100;
-    private final BlockchainExtractor blockchainExtractor;
-    private final TransactionRepository transactionRepository;
     private static final ZoneId ZONE_ID = ZoneId.of("UTC");
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M-dd-yyyy");
-
+    private final BlockchainExtractor blockchainExtractor;
+    private final TransactionRepository transactionRepository;
 
     public DatabaseService(BlockchainExtractor blockchainExtractor, TransactionRepository transactionRepository) {
         this.blockchainExtractor = blockchainExtractor;
@@ -89,11 +87,10 @@ public class DatabaseService {
                     }
                 }
             }
-
             transactions.removeAll(responsesToRemove);
         }
-        nullTransactionsId.removeAll(entitiesToUpdate);
 
+        nullTransactionsId.removeAll(entitiesToUpdate);
         return new ArrayList<>(entitiesToUpdate);
     }
 
@@ -167,8 +164,8 @@ public class DatabaseService {
                 .allTransactions(null)
                 .build();
     }
-    public Map<String, List<TransactionEntity>> getTransactionsFromLastDays(int days) {
 
+    public Map<String, List<TransactionEntity>> getTransactionsFromLastDays(int days) {
         long date = calculateFromDate(days);
         List<TransactionEntity> transactions = transactionRepository.findAllTransactionsFromLastDays(date);
         return transactions.stream().collect(Collectors.groupingBy(TransactionEntity::getChain));

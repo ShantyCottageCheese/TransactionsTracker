@@ -17,9 +17,9 @@ import static tracker.transactionstracker.correlations.TransactionMapper.convert
 @Service
 @Slf4j
 public class CorrelationService {
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yy");
     private final DatabaseService databaseService;
     private final BinanceService binanceService;
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yy");
 
     public CorrelationService(DatabaseService databaseService, BinanceService binanceService) {
         this.databaseService = databaseService;
@@ -31,7 +31,6 @@ public class CorrelationService {
         Map<String, Map<String, BigDecimal>> marketDataMap = binanceService.getMarketData(days + 1);
         Map<String, Map<String, TransactionDto>> transactionDtoMap = convertEntityToDto(transactions, marketDataMap);
         return calculateCorrelationForPeriods(transactionDtoMap);
-
     }
 
     public Map<String, Map<String, BigDecimal>> calculateCorrelationForPeriods(Map<String, Map<String, TransactionDto>> transactionDtoMap) {
@@ -73,10 +72,8 @@ public class CorrelationService {
                 // Przerywamy pętlę, gdy okres jest krótszy niż pełne 7 dni, ponieważ nie będzie już więcej okresów do obliczeń
                 if (currentPeriodSize < periodSize)
                     break;
-
             }
         }
-
         return correlationResults;
     }
 }

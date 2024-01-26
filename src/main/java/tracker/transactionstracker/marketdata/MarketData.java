@@ -25,7 +25,6 @@ public class MarketData {
     private String ignore;
     public BigDecimal calculateAveragePrice() {
         BigDecimal sum = openPrice.add(highPrice).add(lowPrice).add(closePrice);
-
         return sum.divide(BigDecimal.valueOf(4), RoundingMode.HALF_UP).setScale(3,RoundingMode.HALF_UP);
     }
 }

@@ -6,6 +6,7 @@ import tracker.transactionstracker.extractor.response.TransactionResponse;
 
 import java.util.List;
 import java.util.Optional;
+
 @Service
 @Lazy
 public class BscDataHandler implements BlockchainDataHandler {

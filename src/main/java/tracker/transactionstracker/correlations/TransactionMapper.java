@@ -21,7 +21,6 @@ public class TransactionMapper {
             if (priceMap == null)
                 continue;
 
-
             List<TransactionEntity> transactionList = entry.getValue();
             result.putIfAbsent(blockchainName, new HashMap<>());
             result.put(blockchainName, transactionList.stream().map(transaction -> {

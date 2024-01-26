@@ -19,7 +19,6 @@ public class Correlation {
 
         BigDecimal correlation = new BigDecimal(covarianceXY / (stdDivX * stdDivY));
         return correlation.setScale(2, RoundingMode.HALF_UP);
-
     }
 
     static double covariance(List<Double> x, List<Double> y) {
@@ -38,14 +37,12 @@ public class Correlation {
                 n++;
             }
         }
-
         return (n > 1) ? sum / (n - 1) : 0;
     }
 
     static double computeStdDeviation(List<Double> data) {
-        if (data.isEmpty()) {
+        if (data.isEmpty())
             return 0;
-        }
 
         double mean = mean(data);
         double sum = 0;
@@ -58,7 +55,6 @@ public class Correlation {
                 n++;
             }
         }
-
         return Math.sqrt(sum / (n - 1));
     }
 
@@ -72,7 +68,6 @@ public class Correlation {
                 n++;
             }
         }
-
         return (n > 0) ? sum / n : 0;
     }
 }

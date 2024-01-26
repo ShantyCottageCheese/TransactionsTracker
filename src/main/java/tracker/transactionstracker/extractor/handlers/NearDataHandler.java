@@ -33,7 +33,6 @@ public class NearDataHandler implements BlockchainDataHandler {
             return Optional.empty();
         }
     }
-
     @Override
     public List<TransactionResponse> extractData(String url, String chain) {
         List<TransactionResponse> transactionsList = new ArrayList<>();

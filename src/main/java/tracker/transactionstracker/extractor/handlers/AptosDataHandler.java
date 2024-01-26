@@ -20,12 +20,12 @@ import java.util.Optional;
 @Service
 @Lazy
 public class AptosDataHandler implements BlockchainDataHandler {
-
     private final RestTemplate restTemplate;
 
     public AptosDataHandler(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
+
     @Override
     public Optional<AptosResponse> getDataFromBlockchain(String url) {
         AptosResponse aptosResponse = new AptosResponse();
