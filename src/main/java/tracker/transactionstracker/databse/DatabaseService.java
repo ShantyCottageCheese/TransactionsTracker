@@ -158,7 +158,6 @@ public class DatabaseService {
         });
     }
 
-
     private TransactionEntity createMissingTransactionEntity(String chain, LocalDate date) {
         return TransactionEntity.builder()
                 .id(chain + "-" + date.format(formatter))

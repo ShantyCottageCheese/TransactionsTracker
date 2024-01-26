@@ -23,18 +23,6 @@ public class Utils {
     public static final String FILE_PATH = "./src/main/java/tracker/transactionstracker/extractor/temp/";
     public static String fileName = "unknown";
 
-    public static List<TransactionResponse> createCommonTransactionResponse(String chain, List<TransactionResponse> transactionsList, Optional<Long> solanaResponse, Logger log) {
-        solanaResponse.ifPresentOrElse(response -> {
-            TransactionResponse responseTransaction = TransactionResponse.builder()
-                    .id(Utils.getChain(chain) + Utils.getPreviousDate())
-                    .date(Utils.convertDateToUnixFromMDY(Utils.getPreviousDate()))
-                    .chain(chain)
-                    .twentyFourHourChange(response)
-                    .build();
-            transactionsList.add(responseTransaction);
-        }, () -> log.info(Utils.NO_DATA_FOUND + chain));
-        return transactionsList;
-    }
     public static String getId(String[] line, String chain) {
         DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("M/d/yyyy");
         DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern("M-dd-yyyy");
@@ -118,21 +106,6 @@ public class Utils {
             }
         });
         return future;
-    }
-
-    public static void fileWithDirectoryAssurance(String directory) {
-        File dir = new File(directory);
-        if (!dir.exists()) dir.mkdirs();
-    }
-
-    private static boolean sleepThread(int millis) {
-        try {
-            Thread.sleep(millis);
-            return true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
     }
 
 

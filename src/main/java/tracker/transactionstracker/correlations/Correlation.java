@@ -4,28 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 @Slf4j
 public class Correlation {
-//    static double correlationCoefficient(double[] coin1Array, double[] coin2Array) {
-//        List<Double> coin1 = new LinkedList<>();
-//        List<Double> coin2 = new LinkedList<>();
-//        for (double c : coin1Array)
-//            coin1.add(c);
-//        for (double c : coin2Array)
-//            coin2.add(c);
-//
-//        double covarianceXY, stdDivX, stdDivY, correlation;
-//        covarianceXY = covariance(coin1, coin2);
-//        stdDivX = computeStdDeviation(coin1);
-//        stdDivY = computeStdDeviation(coin2);
-//
-//        return covarianceXY / (stdDivX * stdDivY);
-//
-//    }
 
     static BigDecimal correlationCoefficient(List<Double> coin1, List<Double> coin2) {
         double covarianceXY, stdDivX, stdDivY;

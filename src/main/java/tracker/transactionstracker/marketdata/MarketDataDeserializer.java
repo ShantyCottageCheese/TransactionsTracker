@@ -17,7 +17,6 @@ public class MarketDataDeserializer extends JsonDeserializer<MarketData> {
         JsonNode node = jp.getCodec().readTree(jp);
         return new MarketData(
                  convertDateFromMilliSecond( node.get(0).asLong()),
-                //node.get(0).asLong(),
                 new BigDecimal(node.get(1).asText()),
                 new BigDecimal(node.get(2).asText()),
                 new BigDecimal(node.get(3).asText()),

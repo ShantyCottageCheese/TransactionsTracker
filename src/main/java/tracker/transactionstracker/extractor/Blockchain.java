@@ -21,12 +21,12 @@ public enum Blockchain {
 
 
     private final String name;
-    private final String tokenName;
+    private final String ticker;
     private final String url;
 
-    Blockchain(String name, String tokenName, String url) {
+    Blockchain(String name, String ticker, String url) {
         this.name = name;
-        this.tokenName = tokenName;
+        this.ticker = ticker;
         this.url = url;
     }
 

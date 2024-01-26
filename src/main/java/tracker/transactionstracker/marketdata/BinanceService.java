@@ -12,6 +12,12 @@ import tracker.transactionstracker.extractor.Blockchain;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 @Service
 @Lazy
@@ -21,42 +27,62 @@ public class BinanceService {
     private final SpotClient client = new SpotClientImpl();
 
     public Map<String, Map<String, BigDecimal>> getMarketData(int days) {
-
-        Map<String, Map<String, BigDecimal>> pricesMap = new HashMap<>();
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
+        module.addDeserializer(MarketData.class, new MarketDataDeserializer());
+        mapper.registerModule(module);
+
+        // ExecutorService for virtual threads
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+        List<Future<Map.Entry<String, Map<String, BigDecimal>>>> futures = new ArrayList<>();
 
         for (Blockchain name : Blockchain.values()) {
-            Map<String, Object> parameters = new LinkedHashMap<>();
-            parameters.put("symbol", name.getTokenName());
-            parameters.put("interval", "1d");
-            parameters.put("limit", days);
-            String result = client.createMarket().klines(parameters);
+            // Submit a task for each Blockchain to be processed in a virtual thread
+            Future<Map.Entry<String, Map<String, BigDecimal>>> future = executor.submit(() -> {
+                Map<String, Object> parameters = new LinkedHashMap<>();
+                parameters.put("symbol", name.getTicker());
+                parameters.put("interval", "1d");
+                parameters.put("limit", days);
+                String result = client.createMarket().klines(parameters);
 
+                List<MarketData> marketDataList;
+                try {
+                    marketDataList = mapper.readValue(result,
+                            mapper.getTypeFactory().constructCollectionType(List.class, MarketData.class));
+                } catch (JsonProcessingException e) {
+                    log.warn("Error: ", e);
+                    return null;
+                }
+                if (marketDataList.isEmpty()) {
+                    return null;
+                }
+                marketDataList.removeLast();
 
-            module.addDeserializer(MarketData.class, new MarketDataDeserializer());
-            mapper.registerModule(module);
+                Map<String, BigDecimal> insideMap = new HashMap<>();
+                for (MarketData marketData : marketDataList) {
+                    insideMap.put(marketData.getDate(), marketData.calculateAveragePrice());
+                }
+                return new AbstractMap.SimpleImmutableEntry<>(name.getName(), insideMap);
+            });
 
-            List<MarketData> marketDataList;
-            try {
-                marketDataList = mapper.readValue(result,
-                        mapper.getTypeFactory().constructCollectionType(List.class, MarketData.class));
-            } catch (JsonProcessingException e) {
-                log.warn("Error: ", e);
-                continue;
-            }
-            if (marketDataList.isEmpty()) {
-                continue;
-            }
-            marketDataList.removeLast();
-
-            pricesMap.putIfAbsent(name.getName(), new HashMap<>());
-            Map<String, BigDecimal> insideMap = pricesMap.get(name.getName());
-            for (MarketData marketData : marketDataList) {
-                insideMap.put(marketData.getDate(), marketData.calculateAveragePrice());
-            }
+            futures.add(future);
         }
-        return pricesMap;
 
+        Map<String, Map<String, BigDecimal>> pricesMap = futures.stream()
+                .map(f -> {
+                    try {
+                        return f.get(); // Get the result of each future
+                    } catch (InterruptedException | ExecutionException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        executor.shutdown(); // Remember to shutdown the executor
+
+        return pricesMap;
     }
 }

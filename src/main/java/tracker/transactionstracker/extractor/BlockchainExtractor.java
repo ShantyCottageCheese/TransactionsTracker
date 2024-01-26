@@ -31,13 +31,6 @@ public class BlockchainExtractor {
                     .ifPresent(blockchain -> handlers.put(blockchain, handler));
         }
     }
-
-    /*public Map<Blockchain, Optional<List<TransactionResponse>>> extractBlockchainData() {
-         return Arrays.stream(Blockchain.values())
-                 .collect(Collectors.toMap(
-                         Function.identity(),
-                         this::fetchDataForBlockchain));
-     }*/
     public Map<Blockchain, List<TransactionResponse>> extractBlockchainData() {
         Map<Blockchain, Future<List<TransactionResponse>>> futures;
 

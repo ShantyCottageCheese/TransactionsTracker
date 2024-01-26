@@ -42,11 +42,20 @@ public class CosmosDataHandler implements BlockchainDataHandler {
             return Optional.empty();
         }
     }
+
     @Override
     public List<TransactionResponse> extractData(String url, String chain) {
         Optional<Long> cosmosResponse = getDataFromBlockchain(url);
         List<TransactionResponse> transactionsList = new ArrayList<>();
-
-        return Utils.createCommonTransactionResponse(chain, transactionsList, cosmosResponse, log);
+        cosmosResponse.ifPresentOrElse(response -> {
+            TransactionResponse responseTransaction = TransactionResponse.builder()
+                    .id(Utils.getChain(chain) + Utils.getPreviousDate())
+                    .date(Utils.convertDateToUnixFromMDY(Utils.getPreviousDate()))
+                    .chain(chain)
+                    .twentyFourHourChange(response)
+                    .build();
+            transactionsList.add(responseTransaction);
+        }, () -> log.info(Utils.NO_DATA_FOUND + chain));
+        return transactionsList;
     }
 }

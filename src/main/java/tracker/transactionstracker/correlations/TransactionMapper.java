@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import static tracker.transactionstracker.marketdata.Utils.convertDateFromSecond;
 
 public class TransactionMapper {
-    public static Map<String, Map<String, TransactionDto>> mapEntityToDto(Map<String, List<TransactionEntity>> transactions,Map<String, Map<String, BigDecimal>> pricesMap ){
+    public static Map<String, Map<String, TransactionDto>> convertEntityToDto(Map<String, List<TransactionEntity>> transactions, Map<String, Map<String, BigDecimal>> pricesMap ){
         Map<String, Map<String, TransactionDto>> result = new HashMap<>();
 
         for (Map.Entry<String, List<TransactionEntity>> entry : transactions.entrySet()) {

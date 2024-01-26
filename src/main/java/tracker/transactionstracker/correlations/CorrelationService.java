@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static tracker.transactionstracker.correlations.Correlation.correlationCoefficient;
-import static tracker.transactionstracker.correlations.TransactionMapper.mapEntityToDto;
+import static tracker.transactionstracker.correlations.TransactionMapper.convertEntityToDto;
 
 @Service
 @Slf4j
@@ -26,10 +26,10 @@ public class CorrelationService {
         this.binanceService = binanceService;
     }
 
-    public Map<String, Map<String, BigDecimal>> getCorrelationMap() {
-        Map<String, List<TransactionEntity>> transactions = databaseService.getTransactionsFromLastDays(56);
-        Map<String, Map<String, BigDecimal>> marketDataMap = binanceService.getMarketData(57);
-        Map<String, Map<String, TransactionDto>> transactionDtoMap = mapEntityToDto(transactions, marketDataMap);
+    public Map<String, Map<String, BigDecimal>> getCorrelationForPeriods(int days) {
+        Map<String, List<TransactionEntity>> transactions = databaseService.getTransactionsFromLastDays(days);
+        Map<String, Map<String, BigDecimal>> marketDataMap = binanceService.getMarketData(days + 1);
+        Map<String, Map<String, TransactionDto>> transactionDtoMap = convertEntityToDto(transactions, marketDataMap);
         return calculateCorrelationForPeriods(transactionDtoMap);
 
     }
@@ -38,40 +38,42 @@ public class CorrelationService {
         Map<String, Map<String, BigDecimal>> correlationResults = new HashMap<>();
 
         for (String blockchain : transactionDtoMap.keySet()) {
-            // Lista zawiera posortowane daty
             List<String> sortedDates = transactionDtoMap.get(blockchain).keySet()
                     .stream()
                     .sorted(Comparator.comparing(s -> LocalDate.parse(s, FORMATTER)))
                     .toList();
 
-            int periodSize = 7; // Rozmiar okresu do przetwarzania danych
-            for (int i = 0; i <= sortedDates.size() - periodSize; i += periodSize) {
-                if ((sortedDates.size() - i) >= periodSize) {
-                    List<Double> transactionAmounts = new ArrayList<>();
-                    List<Double> prices = new ArrayList<>();
+            int periodSize = 7;
+            for (int i = 0; i < sortedDates.size(); i += periodSize) {
+                int remainingDays = sortedDates.size() - i;
+                int currentPeriodSize = Math.min(periodSize, remainingDays);
 
-                    // Zakres dat do identyfikacji okresu
-                    String startDate = sortedDates.get(i);
-                    String endDate = sortedDates.get(i + periodSize - 1);
+                List<Double> transactionAmounts = new ArrayList<>();
+                List<Double> prices = new ArrayList<>();
 
-                    // Dodawanie danych do obliczeń korelacji
-                    for (int j = i; j < i + periodSize; j++) {
-                        String date = sortedDates.get(j);
-                        TransactionDto dto = transactionDtoMap.get(blockchain).get(date);
-                        if (dto != null) {
-                            transactionAmounts.add(dto.getTwentyFourHourChange() == null ? 0.0 : dto.getTwentyFourHourChange().doubleValue());
-                            prices.add(dto.getPrice().doubleValue());
-                        }
-                    }
+                String startDate = sortedDates.get(i);
+                String endDate = sortedDates.get(i + currentPeriodSize - 1);
 
-                    if (!transactionAmounts.isEmpty() && transactionAmounts.size() == prices.size()) {
-                        BigDecimal correlation = correlationCoefficient(transactionAmounts, prices);
-                        String range = startDate + " - " + endDate;
-                        correlationResults.computeIfAbsent(blockchain, k -> new HashMap<>()).put(range, correlation);
-                    } else {
-                        correlationResults.computeIfAbsent(blockchain, k -> new HashMap<>()).put("N/A", null);
+                for (int j = i; j < i + currentPeriodSize; j++) {
+                    String date = sortedDates.get(j);
+                    TransactionDto dto = transactionDtoMap.get(blockchain).get(date);
+                    if (dto != null) {
+                        transactionAmounts.add(dto.getTwentyFourHourChange() == null ? 0.0 : dto.getTwentyFourHourChange().doubleValue());
+                        prices.add(dto.getPrice().doubleValue());
                     }
                 }
+
+                if (!transactionAmounts.isEmpty() && transactionAmounts.size() == prices.size()) {
+                    BigDecimal correlation = correlationCoefficient(transactionAmounts, prices);
+                    String range = startDate + " - " + endDate;
+                    correlationResults.computeIfAbsent(blockchain, k -> new HashMap<>()).put(range, correlation);
+                } else {
+                    correlationResults.computeIfAbsent(blockchain, k -> new HashMap<>()).put("N/A", null);
+                }
+                // Przerywamy pętlę, gdy okres jest krótszy niż pełne 7 dni, ponieważ nie będzie już więcej okresów do obliczeń
+                if (currentPeriodSize < periodSize)
+                    break;
+
             }
         }
 
