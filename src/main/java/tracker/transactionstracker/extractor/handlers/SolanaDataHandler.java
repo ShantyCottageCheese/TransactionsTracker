@@ -25,7 +25,7 @@ import java.util.Optional;
 public class SolanaDataHandler implements BlockchainDataHandler {
 
     private final RestTemplate restTemplate;
-    @Value("${TOKEN}")
+    @Value("${SOLANA_API_TOKEN}")
     private String token;
 
     public SolanaDataHandler(RestTemplate restTemplate) {
