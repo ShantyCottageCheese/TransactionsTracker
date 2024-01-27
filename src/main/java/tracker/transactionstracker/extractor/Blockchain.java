@@ -8,7 +8,7 @@ public enum Blockchain {
     AVALANCHE("Avalanche", "AVAXUSDT", "https://metrics.avax.network/v1/tx_count/mainnet?interval=day"),
     BSC("Bsc", "BNBUSDT", "https://bscscan.com/chart/tx?output=csv"),
     COSMOS("Cosmos", "ATOMUSDT", "https://index.atomscan.com/blocks/average"),
-    ETHEREUM("Ethereum", "ETHUSDT", " https://etherscan.io/chart/tx?output=csv"),
+    ETHEREUM("Ethereum", "ETHUSDT", "https://etherscan.io/chart/tx?output=csv"),
     FANTOM("Fantom", "FTMUSDT", "https://ftmscan.com/chart/tx?output=csv"),
     OPTIMISM("Optimism", "OPUSDT", "https://optimistic.etherscan.io/chart/tx?output=csv"),
     POLYGON("Polygon", "MATICUSDT", "https://polygonscan.com/chart/tx?output=csv"),
