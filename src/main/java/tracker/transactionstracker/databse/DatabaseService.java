@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tracker.transactionstracker.extractor.Blockchain;
-import tracker.transactionstracker.extractor.BlockchainExtractor;
 import tracker.transactionstracker.extractor.response.TransactionResponse;
 import tracker.transactionstracker.model.TransactionEntity;
 import tracker.transactionstracker.repository.TransactionRepository;
@@ -24,20 +23,14 @@ import static tracker.transactionstracker.databse.Utils.*;
 public class DatabaseService {
     private static final ZoneId ZONE_ID = ZoneId.of("UTC");
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M-dd-yyyy");
-    private final BlockchainExtractor blockchainExtractor;
     private final TransactionRepository transactionRepository;
 
-    public DatabaseService(BlockchainExtractor blockchainExtractor, TransactionRepository transactionRepository) {
-        this.blockchainExtractor = blockchainExtractor;
+    public DatabaseService(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
     }
 
     @Transactional
-    public void saveDataToDatabase() {
-        saveTransactionsToDatabase(blockchainExtractor.extractBlockchainData());
-    }
-
-    private void saveTransactionsToDatabase(Map<Blockchain, List<TransactionResponse>> transactionResponseMap) {
+    public void saveTransactionsToDatabase(Map<Blockchain, List<TransactionResponse>> transactionResponseMap) {
 
         Set<TransactionEntity> nullTransactionsId = findNullTransactionIds();
 

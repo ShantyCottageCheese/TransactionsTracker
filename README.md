@@ -28,7 +28,7 @@ Blockchain Transaction Tracker is an application created for analyzing the corre
 - Generation of heatmap charts to visualize the correlation.
 
 ## Available endpoint
-- `POST /save-data`
+- `POST /saveData`
 - `GET /health`
 - `GET /heatmap?days=<numberOfDays>`
 
