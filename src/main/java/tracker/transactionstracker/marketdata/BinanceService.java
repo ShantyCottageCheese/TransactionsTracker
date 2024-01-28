@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import tracker.transactionstracker.extractor.Blockchain;
 
@@ -20,7 +19,6 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Service
-@Lazy
 @Slf4j
 public class BinanceService {
 
@@ -32,13 +30,11 @@ public class BinanceService {
         module.addDeserializer(MarketData.class, new MarketDataDeserializer());
         mapper.registerModule(module);
 
-        // ExecutorService for virtual threads
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
         List<Future<Map.Entry<String, Map<String, BigDecimal>>>> futures = new ArrayList<>();
 
         for (Blockchain name : Blockchain.values()) {
-            // Submit a task for each Blockchain to be processed in a virtual thread
             Future<Map.Entry<String, Map<String, BigDecimal>>> future = executor.submit(() -> {
                 Map<String, Object> parameters = new LinkedHashMap<>();
                 parameters.put("symbol", name.getTicker());
@@ -81,7 +77,7 @@ public class BinanceService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        executor.shutdown(); // Remember to shutdown the executor
+        executor.shutdown();
 
         return pricesMap;
     }

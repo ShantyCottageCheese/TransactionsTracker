@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 import tracker.transactionstracker.model.TransactionEntity;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Repository
