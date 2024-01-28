@@ -12,7 +12,7 @@ Blockchain Transaction Tracker is an application created for analyzing the corre
 - Generation of heatmap charts to visualize the correlation.
 
 ## Installation and usage
-Before running the application, make sure you have configured the application.properties file with the appropriate data. Additionally, it is recommended to map the TransactionEntity to the corresponding table in the database.
+Before running the application, make sure you have configured the `application.properties` file with the appropriate data. Additionally, it is recommended to map the `TransactionEntity` to the corresponding table in the database.
 - `git clone https://github.com/ShantyCottageCheese/TransactionsTracker.git`
 - `cd TransactionTracker`
 - `./mvnw clean install`
@@ -26,12 +26,12 @@ The application will be accessible at http://localhost:8080.
 - `GET /health`
 - `GET /heatmap?days=<numberOfDays>`
 
-The **saveData** method allows for manual retrieval of data from various API sources and saves them into the database. 
+The `saveData` method allows for manual retrieval of data from various API sources and saves them into the database. 
 Additionally, there is an option to configure a scheduler that will automatically trigger this operation at specified time intervals.
 
-The **health** endpoint is used to check the health status of the application. Calling this endpoint will return a status of OK (200), indicating that the application is functioning correctly.
+The `health` endpoint is used to check the health status of the application. Calling this endpoint will return a status of OK (200), indicating that the application is functioning correctly.
 
-The **heatmap** endpoint is used for generating heatmap charts that visualize correlation based on historical data. The days parameter allows specifying the number of days to consider in the generated chart.
+The `heatmap` endpoint is used for generating heatmap charts that visualize correlation based on historical data. The days parameter allows specifying the number of days to consider in the generated chart.
 
 To generate a heatmap, make an HTTP GET request to the /heatmap endpoint with the days' parameter.
 
