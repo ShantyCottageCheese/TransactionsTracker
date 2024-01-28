@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Entity(name = "TRANSACTIONS_TRACKER")
+@Entity
 public class TransactionEntity {
     @Id
     private String id;
@@ -20,8 +20,8 @@ public class TransactionEntity {
     private String chain;
     @Column
     private Long date;
-    @Column(name = "transaction_24h")
+    @Column
     private Long twentyFourHourChange;
-    @Column(name= "transactions_all")
+    @Column
     private Long allTransactions;
 }

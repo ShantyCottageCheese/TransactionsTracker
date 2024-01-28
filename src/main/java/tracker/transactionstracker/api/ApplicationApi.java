@@ -29,7 +29,7 @@ public class ApplicationApi {
 
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
-        return ResponseEntity.ok("OK");
+        return ResponseEntity.status(200).body("OK");
     }
 
     @GetMapping("/heatmap")
