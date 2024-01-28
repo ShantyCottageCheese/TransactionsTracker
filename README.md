@@ -58,5 +58,5 @@ To generate a heatmap, make an HTTP GET request to the /heatmap endpoint with th
 ## Technologies
 - Java (Spring Boot, JPA)
 - Mysql
-- Binance API ([binance-connector-java](https://github.com/binance/binance-connector-java))
+- Binance API library ([binance-connector-java](https://github.com/binance/binance-connector-java))
 - Charting library ([ECharts-Java](https://github.com/ECharts-Java/ECharts-Java))
