@@ -35,7 +35,8 @@ The **heatmap** endpoint is used for generating heatmap charts that visualize co
 
 To generate a heatmap, make an HTTP GET request to the /heatmap endpoint with the days' parameter.
 
-![img_1.png](img_1.png)
+![image](https://github.com/ShantyCottageCheese/TransactionsTracker/assets/110695928/be95300c-afc3-453b-afee-673171e6374c)
+
 
 ## Supported Blockchains
 - Arbitrum (ARB)
