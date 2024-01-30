@@ -35,14 +35,19 @@ public class ChartService {
 
         List<Number[]> dataValue = new ArrayList<>();
 
-        for (String chain : chains) {
+        for (int i = 0; i < chains.size(); i++) {
+            String chain = chains.get(i);
             CorrelationData dateToCorrelationMap = correlationData.get(chain);
-            for (String date : dates) {
+
+            for (int j = 0; j < dates.size(); j++) {
+                String date = dates.get(j);
                 BigDecimal value = dateToCorrelationMap.getDateRangeWithCorrelation().get(date);
+
                 Number correlationValue = (value != null) ? value.doubleValue() : null;
-                dataValue.add(new Number[]{dates.indexOf(date), chains.indexOf(chain), correlationValue});
+                dataValue.add(new Number[]{j, i, correlationValue});
             }
         }
+
         Heatmap heatmap = new Heatmap()
                 .addXAxis(new CategoryAxis().setName("Date").setData(dates.toArray(new String[0])))
                 .addYAxis(new CategoryAxis().setName("Blockchain").setData(chains.toArray(new String[0])))

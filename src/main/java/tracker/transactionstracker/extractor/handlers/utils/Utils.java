@@ -56,7 +56,6 @@ public class Utils {
         return localDateTime.format(formatter);
     }
 
-
     public static boolean downloadCSVFromWebsite(String url) {
         AtomicBoolean result = new AtomicBoolean(false);
         try (Playwright playwright = Playwright.create()) {
@@ -65,7 +64,6 @@ public class Utils {
                 page = browser.newPage();
 
             page.navigate(url);
-
             page.waitForLoadState(LoadState.NETWORKIDLE);
             page.waitForSelector("//span[contains(text(), 'CSV Data')]");
 
