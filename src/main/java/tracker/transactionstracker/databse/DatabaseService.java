@@ -8,7 +8,6 @@ import tracker.transactionstracker.extractor.response.TransactionResponse;
 import tracker.transactionstracker.model.TransactionEntity;
 import tracker.transactionstracker.repository.TransactionRepository;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
