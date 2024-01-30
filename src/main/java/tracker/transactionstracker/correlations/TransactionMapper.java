@@ -1,39 +1,42 @@
 package tracker.transactionstracker.correlations;
 
+import tracker.transactionstracker.marketdata.CryptoPriceHistory;
 import tracker.transactionstracker.model.TransactionEntity;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static tracker.transactionstracker.marketdata.Utils.convertDateFromSecond;
 
 public class TransactionMapper {
-    public static Map<String, Map<String, TransactionDto>> convertEntityToDto(Map<String, List<TransactionEntity>> transactions, Map<String, Map<String, BigDecimal>> pricesMap ){
-        Map<String, Map<String, TransactionDto>> result = new HashMap<>();
+    public static Map<String, BlockchainDataTransaction> convertEntityToBlockchainDataTransactionsMap(Map<String, List<TransactionEntity>> transactions, Map<String, CryptoPriceHistory> pricesMap) {
+        Map<String, BlockchainDataTransaction> result = new HashMap<>();
 
-        for (Map.Entry<String, List<TransactionEntity>> entry : transactions.entrySet()) {
-            String blockchainName = entry.getKey();
-            Map<String, BigDecimal> priceMap = pricesMap.get(blockchainName);
-            if (priceMap == null)
-                continue;
+        transactions.forEach((blockchainName, transactionList) -> {
+            CryptoPriceHistory priceMap = pricesMap.get(blockchainName);
+            if (priceMap == null) {
+                return;
+            }
+            BlockchainDataTransaction blockchainDataTransaction = new BlockchainDataTransaction();
 
-            List<TransactionEntity> transactionList = entry.getValue();
-            result.putIfAbsent(blockchainName, new HashMap<>());
-            result.put(blockchainName, transactionList.stream().map(transaction -> {
-                String date = convertDateFromSecond(transaction.getDate());
-                return new TransactionDto.TransactionDtoBuilder()
-                        .chain(blockchainName)
-                        .date(date)
-                        .twentyFourHourChange(transaction.getTwentyFourHourChange())
-                        .allTransactions(transaction.getAllTransactions())
-                        .price(priceMap.get(date))
-                        .build();
-            }).collect(Collectors.toMap(TransactionDto::getDate, Function.identity())));
-        }
+            Map<String, TransactionDto> transactionDtoMap = transactionList.stream()
+                    .collect(Collectors.toMap(
+                            transaction -> convertDateFromSecond(transaction.getDate()),
+                            transaction -> new TransactionDto.TransactionDtoBuilder()
+                                    .chain(blockchainName)
+                                    .date(convertDateFromSecond(transaction.getDate()))
+                                    .twentyFourHourChange(transaction.getTwentyFourHourChange())
+                                    .allTransactions(transaction.getAllTransactions())
+                                    .price(priceMap.getPriceHistory().get(convertDateFromSecond(transaction.getDate())))
+                                    .build()
+                    ));
+
+            blockchainDataTransaction.setBlockchainData(transactionDtoMap);
+            result.put(blockchainName, blockchainDataTransaction);
+        });
+
         return result;
     }
 }

@@ -19,16 +19,16 @@ public class BlockchainExtractor {
     public BlockchainExtractor(List<BlockchainDataHandler> handlerList) {
         handlers = new EnumMap<>(Blockchain.class);
         for (BlockchainDataHandler handler : handlerList) {
-            convertHandlerNameToEnum(handler.getClass().getSimpleName())
-                    .flatMap(name -> {
-                        try {
-                            return Optional.of(Blockchain.valueOf(name));
-                        } catch (IllegalArgumentException e) {
-                            log.warn("Enum for handler not found: {}", name);
-                            return Optional.empty();
-                        }
-                    })
-                    .ifPresent(blockchain -> handlers.put(blockchain, handler));
+                convertHandlerNameToEnum(handler.getClass().getSimpleName())
+                        .flatMap(name -> {
+                            try {
+                                return Optional.of(Blockchain.valueOf(name));
+                            } catch (IllegalArgumentException e) {
+                                log.warn("Enum for handler not found: {}", name);
+                                return Optional.empty();
+                            }
+                        })
+                        .ifPresent(blockchain -> handlers.put(blockchain, handler));
         }
     }
 
@@ -51,6 +51,7 @@ public class BlockchainExtractor {
                                 return entry.getValue().get();
                             } catch (InterruptedException | ExecutionException e) {
                                 log.error("Error fetching data for blockchain: {}", entry.getKey(), e);
+                                Thread.currentThread().interrupt();
                                 return Collections.emptyList();
                             }
                         }
@@ -62,7 +63,7 @@ public class BlockchainExtractor {
     }
 
     private Optional<String> convertHandlerNameToEnum(String handlerName) {
-        if (handlerName != null && handlerName.endsWith("DataHandler")) {
+        if (handlerName.endsWith("DataHandler")) {
             return Optional.of(handlerName.substring(0, handlerName.length() - "DataHandler".length()).toUpperCase());
         } else {
             return Optional.empty();

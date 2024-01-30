@@ -14,14 +14,16 @@ import java.util.stream.IntStream;
 public class Correlation {
 
     static BigDecimal correlationCoefficient(List<Double> coin1, List<Double> coin2) {
-        double covarianceXY, stdDivX, stdDivY;
+        double covarianceXY;
+        double stdDivX;
+        double stdDivY;
         covarianceXY = covariance(coin1, coin2);
         stdDivX = computeStdDeviation(coin1);
         stdDivY = computeStdDeviation(coin2);
         if (stdDivX == 0 || stdDivY == 0)
             return null;
 
-        BigDecimal correlation = new BigDecimal(covarianceXY / (stdDivX * stdDivY));
+        BigDecimal correlation = BigDecimal.valueOf(covarianceXY / (stdDivX * stdDivY));
         return correlation.setScale(2, RoundingMode.HALF_UP);
     }
 

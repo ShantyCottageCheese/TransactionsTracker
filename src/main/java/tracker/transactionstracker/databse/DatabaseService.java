@@ -89,15 +89,18 @@ public class DatabaseService {
 
 
     private List<TransactionEntity> createTransactionEntities(List<TransactionResponse> newTransactions) {
-        return newTransactions.stream()
-                .map(transaction -> TransactionEntity.builder()
-                        .id(transaction.getId())
-                        .chain(transaction.getChain())
-                        .date(transaction.getDate())
-                        .twentyFourHourChange(transaction.getChain().equals("Solana") || transaction.getChain().equals("Cardano") ? twentyFourHourChangeTransaction(transaction, transactionRepository) : transaction.getTwentyFourHourChange())
-                        .allTransactions(transaction.getAllTransactions())
-                        .build())
-                .collect(Collectors.toList());
+        List<TransactionEntity> list = new ArrayList<>();
+        for (TransactionResponse transaction : newTransactions) {
+            TransactionEntity build = TransactionEntity.builder()
+                    .id(transaction.getId())
+                    .chain(transaction.getChain())
+                    .date(transaction.getDate())
+                    .twentyFourHourChange(transaction.getChain().equals("Solana") || transaction.getChain().equals("Cardano") ? twentyFourHourChangeTransaction(transaction, transactionRepository) : transaction.getTwentyFourHourChange())
+                    .allTransactions(transaction.getAllTransactions())
+                    .build();
+            list.add(build);
+        }
+        return list;
     }
 
     private void addBlockchainTransactionsWithoutData(Map<Blockchain, List<TransactionResponse>> transactionResponseMap, List<TransactionEntity> transactionsEntitiesToSave) {

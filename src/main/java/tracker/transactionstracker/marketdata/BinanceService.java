@@ -24,60 +24,62 @@ public class BinanceService {
 
     private final SpotClient client = new SpotClientImpl();
 
-    public Map<String, Map<String, BigDecimal>> getMarketData(int days) {
+    public Map<String, CryptoPriceHistory> getMarketData(int days) {
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(MarketData.class, new MarketDataDeserializer());
         mapper.registerModule(module);
 
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        Map<String, CryptoPriceHistory> pricesMap;
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
 
-        List<Future<Map.Entry<String, Map<String, BigDecimal>>>> futures = new ArrayList<>();
+        List<Future<Map.Entry<String, CryptoPriceHistory>>> futures = new ArrayList<>();
 
-        for (Blockchain name : Blockchain.values()) {
-            Future<Map.Entry<String, Map<String, BigDecimal>>> future = executor.submit(() -> {
-                Map<String, Object> parameters = new LinkedHashMap<>();
-                parameters.put("symbol", name.getTicker());
-                parameters.put("interval", "1d");
-                parameters.put("limit", days);
-                String result = client.createMarket().klines(parameters);
+            for (Blockchain name : Blockchain.values()) {
+                Future<Map.Entry<String, CryptoPriceHistory>> future = executor.submit(() -> {
+                    Map<String, Object> parameters = new LinkedHashMap<>();
+                    parameters.put("symbol", name.getTicker());
+                    parameters.put("interval", "1d");
+                    parameters.put("limit", days);
+                    String result = client.createMarket().klines(parameters);
 
-                List<MarketData> marketDataList;
-                try {
-                    marketDataList = mapper.readValue(result,
-                            mapper.getTypeFactory().constructCollectionType(List.class, MarketData.class));
-                } catch (JsonProcessingException e) {
-                    log.warn("Error: ", e);
-                    return null;
-                }
-                if (marketDataList.isEmpty()) {
-                    return null;
-                }
-                marketDataList.removeLast();
-
-                Map<String, BigDecimal> insideMap = new HashMap<>();
-                for (MarketData marketData : marketDataList) {
-                    insideMap.put(marketData.getDate(), marketData.calculateAveragePrice());
-                }
-                return new AbstractMap.SimpleImmutableEntry<>(name.getName(), insideMap);
-            });
-
-            futures.add(future);
-        }
-
-        Map<String, Map<String, BigDecimal>> pricesMap = futures.stream()
-                .map(f -> {
+                    List<MarketData> marketDataList;
                     try {
-                        return f.get(); // Get the result of each future
-                    } catch (InterruptedException | ExecutionException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
+                        marketDataList = mapper.readValue(result,
+                                mapper.getTypeFactory().constructCollectionType(List.class, MarketData.class));
+                    } catch (JsonProcessingException e) {
+                        log.warn("Error: ", e);
+                        return null;
                     }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                    if (marketDataList.isEmpty()) {
+                        return null;
+                    }
+                    marketDataList.removeLast();
+                    CryptoPriceHistory cryptoPriceHistory = new CryptoPriceHistory();
+                    for (MarketData marketData : marketDataList) {
+                        cryptoPriceHistory.getPriceHistory().putIfAbsent(marketData.getDate(), marketData.calculateAveragePrice());
+                    }
+                    return new AbstractMap.SimpleImmutableEntry<>(name.getName(),cryptoPriceHistory);
+                });
 
-        executor.shutdown();
+                futures.add(future);
+            }
+
+            pricesMap = futures.stream()
+                    .map(f -> {
+                        try {
+                            return f.get(); // Get the result of each future
+                        } catch (InterruptedException | ExecutionException e) {
+                            log.warn("Error: ", e);
+                            Thread.currentThread().interrupt();
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            executor.shutdown();
+        }
 
         return pricesMap;
     }

@@ -6,6 +6,7 @@ import org.icepear.echarts.components.coord.cartesian.CategoryAxis;
 import org.icepear.echarts.components.series.SeriesLabel;
 import org.icepear.echarts.render.Engine;
 import org.springframework.stereotype.Service;
+import tracker.transactionstracker.correlations.CorrelationData;
 import tracker.transactionstracker.correlations.CorrelationService;
 
 import java.math.BigDecimal;
@@ -23,10 +24,11 @@ public class ChartService {
     }
 
     public String generateHeatmap(int days) {
-        Map<String, Map<String, BigDecimal>> correlationData = correlationService.getCorrelationForPeriods(days);
+        Map<String, CorrelationData> correlationData = correlationService.getCorrelationForPeriods(days);
         List<String> chains = new ArrayList<>(correlationData.keySet());
         Collections.sort(chains);
-        List<String> dates = correlationData.values().iterator().next().keySet().stream().sorted(Comparator.comparing(range -> {
+
+        List<String> dates = correlationData.values().iterator().next().getDateRangeWithCorrelation().keySet().stream().sorted(Comparator.comparing(range -> {
             String firstDate = range.split(" - ")[0];
             return LocalDate.parse(firstDate, FORMATTER);
         })).toList();
@@ -34,9 +36,9 @@ public class ChartService {
         List<Number[]> dataValue = new ArrayList<>();
 
         for (String chain : chains) {
-            Map<String, BigDecimal> dateToCorrelationMap = correlationData.get(chain);
+            CorrelationData dateToCorrelationMap = correlationData.get(chain);
             for (String date : dates) {
-                BigDecimal value = dateToCorrelationMap.get(date);
+                BigDecimal value = dateToCorrelationMap.getDateRangeWithCorrelation().get(date);
                 Number correlationValue = (value != null) ? value.doubleValue() : null;
                 dataValue.add(new Number[]{dates.indexOf(date), chains.indexOf(chain), correlationValue});
             }

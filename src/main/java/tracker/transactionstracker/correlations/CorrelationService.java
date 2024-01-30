@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tracker.transactionstracker.databse.DatabaseService;
 import tracker.transactionstracker.marketdata.BinanceService;
+import tracker.transactionstracker.marketdata.CryptoPriceHistory;
 import tracker.transactionstracker.model.TransactionEntity;
 
 import java.math.BigDecimal;
@@ -12,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static tracker.transactionstracker.correlations.Correlation.correlationCoefficient;
-import static tracker.transactionstracker.correlations.TransactionMapper.convertEntityToDto;
+import static tracker.transactionstracker.correlations.TransactionMapper.convertEntityToBlockchainDataTransactionsMap;
 
 @Service
 @Slf4j
@@ -26,21 +27,23 @@ public class CorrelationService {
         this.binanceService = binanceService;
     }
 
-    public Map<String, Map<String, BigDecimal>> getCorrelationForPeriods(int days) {
+    public Map<String, CorrelationData> getCorrelationForPeriods(int days) {
         Map<String, List<TransactionEntity>> transactions = databaseService.getTransactionsFromLastDays(days);
-        Map<String, Map<String, BigDecimal>> marketDataMap = binanceService.getMarketData(days + 1);
-        Map<String, Map<String, TransactionDto>> transactionDtoMap = convertEntityToDto(transactions, marketDataMap);
-        return calculateCorrelationForPeriods(transactionDtoMap);
+        Map<String, CryptoPriceHistory> marketDataMap = binanceService.getMarketData(days + 1);
+        Map<String, BlockchainDataTransaction> blockchainDataTransactionMap = convertEntityToBlockchainDataTransactionsMap(transactions, marketDataMap);
+        return calculateCorrelationForPeriods(blockchainDataTransactionMap);
     }
 
-    public Map<String, Map<String, BigDecimal>> calculateCorrelationForPeriods(Map<String, Map<String, TransactionDto>> transactionDtoMap) {
-        Map<String, Map<String, BigDecimal>> correlationResults = new HashMap<>();
 
-        for (String blockchain : transactionDtoMap.keySet()) {
-            List<String> sortedDates = transactionDtoMap.get(blockchain).keySet()
-                    .stream()
-                    .sorted(Comparator.comparing(s -> LocalDate.parse(s, FORMATTER)))
-                    .toList();
+    public Map<String, CorrelationData> calculateCorrelationForPeriods(Map<String, BlockchainDataTransaction> blockchainDataTransactionMap) {
+        Map<String, CorrelationData> correlationResults = new HashMap<>();
+
+        for (Map.Entry<String,BlockchainDataTransaction> entry : blockchainDataTransactionMap.entrySet()) {
+            String blockchainName = entry.getKey();
+            BlockchainDataTransaction dataTransaction = entry.getValue();
+            CorrelationData correlationData = new CorrelationData();
+            List<String> sortedDates = new ArrayList<>(dataTransaction.getBlockchainData().keySet());
+            sortedDates.sort(Comparator.comparing(s -> LocalDate.parse(s, FORMATTER)));
 
             int periodSize = 7;
             for (int i = 0; i < sortedDates.size(); i += periodSize) {
@@ -55,7 +58,7 @@ public class CorrelationService {
 
                 for (int j = i; j < i + currentPeriodSize; j++) {
                     String date = sortedDates.get(j);
-                    TransactionDto dto = transactionDtoMap.get(blockchain).get(date);
+                    TransactionDto dto = dataTransaction.getBlockchainData().get(date);
                     if (dto != null) {
                         transactionAmounts.add(dto.getTwentyFourHourChange() == null ? 0.0 : dto.getTwentyFourHourChange().doubleValue());
                         prices.add(dto.getPrice().doubleValue());
@@ -65,14 +68,14 @@ public class CorrelationService {
                 if (!transactionAmounts.isEmpty() && transactionAmounts.size() == prices.size()) {
                     BigDecimal correlation = correlationCoefficient(transactionAmounts, prices);
                     String range = startDate + " - " + endDate;
-                    correlationResults.computeIfAbsent(blockchain, k -> new HashMap<>()).put(range, correlation);
-                } else {
-                    correlationResults.computeIfAbsent(blockchain, k -> new HashMap<>()).put("N/A", null);
-                }
-                // Przerywamy pętlę, gdy okres jest krótszy niż pełne 7 dni, ponieważ nie będzie już więcej okresów do obliczeń
+                    correlationData.getDateRangeWithCorrelation().putIfAbsent(range, correlation);
+                } else
+                    correlationData.getDateRangeWithCorrelation().putIfAbsent("N/A", null);
+
                 if (currentPeriodSize < periodSize)
                     break;
             }
+            correlationResults.put(blockchainName, correlationData);
         }
         return correlationResults;
     }
