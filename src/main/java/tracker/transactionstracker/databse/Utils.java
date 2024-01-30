@@ -15,11 +15,15 @@ import java.util.stream.IntStream;
 public class Utils {
     private static final ZoneId ZONE_ID = ZoneId.of("UTC");
     private static final int BATCH_SIZE = 100;
+    static long now = System.currentTimeMillis();
+    static long oneDayInMillis = 24 * 60 * 60 * 1000;
+    static long startOfDay = now - (now % oneDayInMillis);
 
     static Long twentyFourHourChangeTransaction(TransactionResponse transactionResponse, TransactionRepository transactionRepository) {
-        Optional<TransactionEntity> previousTransactionEntity = transactionRepository.findFirstByChainAndDateBeforeOrderByDateDesc(
+        Optional<TransactionEntity> previousTransactionEntity = transactionRepository.findFirstByChainAndDateBeforeWithLimit(
                 transactionResponse.getChain(),
-                transactionResponse.getDate()
+                transactionResponse.getDate(),
+                startOfDay
         );
 
         if (previousTransactionEntity.isPresent() && previousTransactionEntity.get().getAllTransactions() != null) {
@@ -36,6 +40,7 @@ public class Utils {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M-dd-yyy");
         return localDateTime.format(formatter);
     }
+
 
     static long getPreviousTimestamp() {
         LocalDate localDate = LocalDate.now(ZONE_ID).minusDays(1);

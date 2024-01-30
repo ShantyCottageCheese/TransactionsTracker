@@ -5,6 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 @Slf4j
 public class Correlation {
@@ -25,19 +29,21 @@ public class Correlation {
 
         double meanX = mean(x);
         double meanY = mean(y);
+        int n = (int) Math.min(x.size(), (long) y.size());
+
         double sum = 0;
-        int n = 0;
 
-        for (int i = 0; i < x.size(); i++) {
-            Double xi = x.get(i);
-            Double yi = y.get(i);
-
-            if (xi != null && yi != null) {
-                sum += (xi - meanX) * (yi - meanY);
-                n++;
-            }
+        if (n > 1) {
+            sum = IntStream.range(0, n)
+                    .mapToDouble(i -> {
+                        double xi = x.get(i);
+                        double yi = y.get(i);
+                        return (xi - meanX) * (yi - meanY);
+                    })
+                    .sum() / (n - 1);
         }
-        return (n > 1) ? sum / (n - 1) : 0;
+
+        return sum;
     }
 
     static double computeStdDeviation(List<Double> data) {
@@ -45,29 +51,27 @@ public class Correlation {
             return 0;
 
         double mean = mean(data);
-        double sum = 0;
-        int n = 0;
+        AtomicReference<Double> sum = new AtomicReference<>((double) 0);
+        AtomicInteger n = new AtomicInteger();
 
-        for (Double value : data) {
-            if (value != null) {
-                double dev = value - mean;
-                sum += dev * dev;
-                n++;
-            }
-        }
-        return Math.sqrt(sum / (n - 1));
+        data.stream().filter(Objects::nonNull).forEach(val ->{
+            double dev = val - mean;
+            sum.updateAndGet(v -> (v + dev * dev));
+            n.getAndIncrement();
+        });
+
+        return Math.sqrt(sum.get() / (n.get() - 1));
     }
 
     static double mean(List<Double> data) {
-        double sum = 0;
-        int n = 0;
+        AtomicReference<Double> sum = new AtomicReference<>((double) 0);
+        AtomicInteger n = new AtomicInteger();
 
-        for (Double value : data) {
-            if (value != null) {
-                sum += value;
-                n++;
-            }
-        }
-        return (n > 0) ? sum / n : 0;
+        data.stream().filter(Objects::nonNull).forEach(val ->{
+            sum.updateAndGet(v -> v + val);
+            n.getAndIncrement();
+        });
+
+        return (n.get() > 0) ? sum.get() / n.get() : 0;
     }
 }

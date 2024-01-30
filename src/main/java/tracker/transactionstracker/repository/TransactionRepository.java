@@ -11,7 +11,15 @@ import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<TransactionEntity,String> {
-    Optional<TransactionEntity> findFirstByChainAndDateBeforeOrderByDateDesc(String chain, Long date);
+    @Query(value = "SELECT * FROM TRANSACTIONS_TRACKER " +
+            "WHERE chain = :chain " +
+            "AND date < :date " +
+            "AND date >= :dayBefore " +
+            "ORDER BY date DESC LIMIT 1", nativeQuery = true)
+    Optional<TransactionEntity> findFirstByChainAndDateBeforeWithLimit(
+            @Param("chain") String chain,
+            @Param("date") Long endDate,
+            @Param("dayBefore") Long startDate);
     @Query("SELECT t FROM TRANSACTIONS_TRACKER t WHERE t.date > :fromDate")
     List<TransactionEntity> findAllTransactionsFromLastDays(@Param("fromDate") Long fromDate);
     @Query("SELECT t FROM TRANSACTIONS_TRACKER t WHERE t.twentyFourHourChange IS NULL")
