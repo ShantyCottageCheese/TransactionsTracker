@@ -8,6 +8,7 @@ import tracker.transactionstracker.extractor.response.TransactionResponse;
 import tracker.transactionstracker.model.TransactionEntity;
 import tracker.transactionstracker.repository.TransactionRepository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -66,25 +67,36 @@ public class DatabaseService {
     }
 
     private List<TransactionEntity> filterAndUpdateTransactions(Map<Blockchain, List<TransactionResponse>> transactionResponseMap, Set<TransactionEntity> nullTransactionsId) {
-        Set<TransactionResponse> responsesToRemove = new HashSet<>();
-        Set<TransactionEntity> entitiesToUpdate = new HashSet<>();
 
-        for (List<TransactionResponse> transactions : transactionResponseMap.values()) {
-            for (TransactionResponse transactionResponse : transactions) {
-                for (TransactionEntity transactionEntity : nullTransactionsId) {
-                    if (transactionEntity.getId().equals(transactionResponse.getId())) {
-                        transactionEntity.setTwentyFourHourChange(transactionResponse.getChain().equals("Solana") || transactionResponse.getChain().equals("Cardano") ? twentyFourHourChangeTransaction(transactionResponse, transactionRepository) : transactionResponse.getTwentyFourHourChange());
-                        transactionEntity.setAllTransactions(transactionResponse.getAllTransactions());
-                        entitiesToUpdate.add(transactionEntity);
-                        responsesToRemove.add(transactionResponse);
-                    }
-                }
-            }
-            transactions.removeAll(responsesToRemove);
-        }
+        Map<String, TransactionEntity> transactionEntityMap = nullTransactionsId.stream()
+                .collect(Collectors.toMap(TransactionEntity::getId, entity -> entity));
+
+        Set<String> transactionIdsToRemove = new HashSet<>();
+        Set<TransactionEntity> entitiesToUpdate = transactionResponseMap.values().stream()
+                .flatMap(List::stream)
+                .filter(transactionResponse -> transactionEntityMap.containsKey(transactionResponse.getId()))
+                .map(transactionResponse -> {
+                    TransactionEntity transactionEntity = transactionEntityMap.get(transactionResponse.getId());
+                    updateTransactionEntityFromResponse(transactionEntity, transactionResponse);
+                    transactionIdsToRemove.add(transactionResponse.getId());
+                    return transactionEntity;
+                })
+                .collect(Collectors.toSet());
+
+        transactionResponseMap.forEach((blockchain, transactions) -> transactions.removeIf(response -> transactionIdsToRemove.contains(response.getId())));
 
         nullTransactionsId.removeAll(entitiesToUpdate);
+
         return new ArrayList<>(entitiesToUpdate);
+    }
+
+    private void updateTransactionEntityFromResponse(TransactionEntity transactionEntity, TransactionResponse transactionResponse) {
+        String chain = transactionResponse.getChain();
+        Long twentyFourHourChange = (chain.equals("Solana") || chain.equals("Cardano")) ?
+                twentyFourHourChangeTransaction(transactionResponse, transactionRepository) :
+                transactionResponse.getTwentyFourHourChange();
+        transactionEntity.setTwentyFourHourChange(twentyFourHourChange);
+        transactionEntity.setAllTransactions(transactionResponse.getAllTransactions());
     }
 
 
