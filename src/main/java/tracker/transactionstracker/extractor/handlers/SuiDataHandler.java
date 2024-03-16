@@ -33,7 +33,6 @@ public class SuiDataHandler implements BlockchainDataHandler {
                 return Optional.of((response.getValue().longValue()));
             } else {
                 return Optional.empty();
-
             }
         } catch (RestClientException e) {
             log.error("Sui", e);

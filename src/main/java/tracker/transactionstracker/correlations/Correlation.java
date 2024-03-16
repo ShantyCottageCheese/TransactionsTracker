@@ -20,8 +20,9 @@ public class Correlation {
         covarianceXY = covariance(coin1, coin2);
         stdDivX = computeStdDeviation(coin1);
         stdDivY = computeStdDeviation(coin2);
-        if (stdDivX == 0 || stdDivY == 0)
-            return null;
+        if (stdDivX == 0 || stdDivY == 0 || Double.isNaN(covarianceXY) || Double.isNaN(stdDivX) || Double.isNaN(stdDivY)) {
+            return null; // The correlation cannot be computed
+        }
 
         BigDecimal correlation = BigDecimal.valueOf(covarianceXY / (stdDivX * stdDivY));
         return correlation.setScale(2, RoundingMode.HALF_UP);

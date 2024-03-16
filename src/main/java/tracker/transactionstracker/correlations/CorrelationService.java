@@ -37,15 +37,17 @@ public class CorrelationService {
 
     public Map<String, CorrelationData> calculateCorrelationForPeriods(Map<String, BlockchainDataTransaction> blockchainDataTransactionMap) {
         Map<String, CorrelationData> correlationResults = new HashMap<>();
+        int periodSize = 7;
 
-        for (Map.Entry<String,BlockchainDataTransaction> entry : blockchainDataTransactionMap.entrySet()) {
+        for (Map.Entry<String, BlockchainDataTransaction> entry : blockchainDataTransactionMap.entrySet()) {
             String blockchainName = entry.getKey();
             BlockchainDataTransaction dataTransaction = entry.getValue();
             CorrelationData correlationData = new CorrelationData();
             List<String> sortedDates = new ArrayList<>(dataTransaction.getBlockchainData().keySet());
+            if (sortedDates.size() < periodSize)
+                continue;
             sortedDates.sort(Comparator.comparing(s -> LocalDate.parse(s, FORMATTER)));
 
-            int periodSize = 7;
             for (int i = 0; i < sortedDates.size(); i += periodSize) {
                 int remainingDays = sortedDates.size() - i;
                 int currentPeriodSize = Math.min(periodSize, remainingDays);

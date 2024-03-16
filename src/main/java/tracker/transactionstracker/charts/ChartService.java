@@ -27,7 +27,9 @@ public class ChartService {
         Map<String, CorrelationData> correlationData = correlationService.getCorrelationForPeriods(days);
         List<String> chains = new ArrayList<>(correlationData.keySet());
         Collections.sort(chains);
-
+        if (chains.isEmpty()) {
+            return "N/A";
+        }
         List<String> dates = correlationData.values().iterator().next().getDateRangeWithCorrelation().keySet().stream().sorted(Comparator.comparing(range -> {
             String firstDate = range.split(" - ")[0];
             return LocalDate.parse(firstDate, FORMATTER);
