@@ -12,7 +12,7 @@ Blockchain Transaction Tracker is an application created for analyzing the corre
 - Generation of heatmap charts to visualize the correlation.
 
 ## Installation and usage
-Before running the application, make sure you have configured the `application.properties` file with the appropriate data. Additionally, it is recommended to map the `TransactionEntity` to the corresponding table in the database.
+Before running the application, make sure you have configured the `application.properties` file with the appropriate data. Additionally, it is recommended to map the `TransactionEntity` to the corresponding table in the database. For demonstration purposes, the application is currently configured to use the H2 in-memory database. However, you can replace it with your preferred database by adjusting the configuration in the `application.properties` file.
 - `git clone https://github.com/ShantyCottageCheese/TransactionsTracker.git`
 - `cd TransactionTracker`
 - `./mvnw clean install`
